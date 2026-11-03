@@ -4,6 +4,11 @@
 
 你当前这份代码要求 C++20，学习时用已安装的 GCC/G++ 13 编译即可。C++ 方面先掌握 RAII、智能指针、移动语义、模板基础、互斥锁和条件变量；遇到高级用法再补，不必先学完所有 C++20 特性。
 
+你当前仓库已经有很好的导读，可以直接配合源码阅读：
+
+- [写入流程导读](../rocksdb/docs/components/write_flow/index.md)
+- [读取流程导读](../rocksdb/docs/components/read_flow/index.md)
+
 ### 1. 先理解整体数据流
 
 先记住这两条路径：
