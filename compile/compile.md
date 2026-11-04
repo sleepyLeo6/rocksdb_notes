@@ -117,3 +117,19 @@ run
 停在断点后，使用 `bt` 查看调用栈、`step` 进入函数、`next` 执行下一行、`frame variable` 查看局部变量、`continue` 继续运行。命令说明可参考 [LLDB 官方教程](https://lldb.llvm.org/use/tutorial.html)。
 
 构建产物位于 `build-debug-macos/`。以上步骤已对照当前仓库的 CMake 选项检查，并通过独立的小程序验证了 Clang、C++20、ARM64、26.5 SDK 和 RocksDB 公共头文件的组合；由于当前尚未安装 CMake，还没有实际执行 CMake 配置、完整构建或测试。
+
+# mac 编译 db_bench
+```zsh
+export SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk
+export CPATH="$(brew --prefix)/include${CPATH:+:$CPATH}"
+export LIBRARY_PATH="$(brew --prefix)/lib${LIBRARY_PATH:+:$LIBRARY_PATH}"
+
+AUTO_CLEAN=1 DEBUG_LEVEL=0 make -j"$(sysctl -n hw.ncpu)" db_bench
+```
+
+然后检查：
+```zsh
+grep -E -- '-DSNAPPY|-DGFLAGS' make_config.mk
+```
+如果有输出，那么说明完成了编译
+
