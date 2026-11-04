@@ -118,7 +118,9 @@ run
 
 构建产物位于 `build-debug-macos/`。以上步骤已对照当前仓库的 CMake 选项检查，并通过独立的小程序验证了 Clang、C++20、ARM64、26.5 SDK 和 RocksDB 公共头文件的组合；由于当前尚未安装 CMake，还没有实际执行 CMake 配置、完整构建或测试。
 
-# mac 编译 db_bench
+# 编译 db_bench
+
+## mac 编译 db_bench
 ```zsh
 export SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk
 export CPATH="$(brew --prefix)/include${CPATH:+:$CPATH}"
@@ -133,3 +135,35 @@ grep -E -- '-DSNAPPY|-DGFLAGS' make_config.mk
 ```
 如果有输出，那么说明完成了编译
 
+## linux 编译 db_bench
+
+你当前已有 build/，且已启用 db_bench，直接编译：
+
+```bash
+cd /home/leo/dev/RocksDB
+cmake --build build --target db_bench -j8
+./build/db_bench --help
+```
+
+当前 build/ 配置是 Debug。 如果要测性能，建议单独建 Release 目录：
+
+```bash
+cmake -S rocksdb -B build-release \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DWITH_BENCHMARK_TOOLS=ON \
+  -DWITH_GFLAGS=ON \
+  -DWITH_TESTS=OFF
+
+cmake --build build-release --target db_bench -j8
+./build-release/db_bench --help
+```
+
+也可以在源码目录用 Make：
+
+```bash
+cd /home/leo/dev/RocksDB/rocksdb
+make -j8 db_bench DEBUG_LEVEL=0
+./db_bench --help
+```
+
+db_bench 需要 gflags；若提示缺失，Ubuntu/Debian 下安装 sudo apt install libgflags-dev。内存不足时将 -j8 调小。
