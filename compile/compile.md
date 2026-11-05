@@ -4,9 +4,9 @@
 
 在终端执行：
 
-cd /home/leo/dev/RocksDB/rocksdb
+cd /home/leo/dev/RocksDB
 
-cmake -S . -B build-debug \
+cmake -S rocksdb -B build-debug \
   -DCMAKE_C_COMPILER=gcc-13 \
   -DCMAKE_CXX_COMPILER=g++-13 \
   -DCMAKE_BUILD_TYPE=Debug \
@@ -33,17 +33,24 @@ gdb --args ./build-debug/db_basic_test
 break rocksdb::DBImpl::Write
 run
 
-构建产物都在 build-debug/ 中。先用 -j4 控制内存占用；内存充足时可以提高并行数。以上是编译步骤，我还没有实际执行构建。
+构建产物都在 build-debug/ 中，与 rocksdb/ 源码目录并列。`-S` 指定源码目录，`-B` 指定构建目录，相对路径以执行命令时的工作目录为基准。先用 -j4 控制内存占用；内存充足时可以提高并行数。以上是 Linux 编译步骤，尚未在 Linux 上实际执行构建。
 
 # mac 编译
 
 与上面的 Linux 流程相同，使用 CMake 构建 Debug 库和 `db_basic_test`，关闭 gflags、基准工具和命令行工具。macOS 使用系统自带的 Apple Clang 编译，并使用 LLDB 调试。
 
-以下命令适用于当前这台 Apple Silicon Mac，源码目录是 `/Users/leo/doc/RocksDB/rocksdb`。
+以下命令适用于当前这台 Apple Silicon Mac。在 `/Users/leo/doc/RocksDB` 中执行，源码目录和构建目录并列：
+
+```text
+RocksDB/
+├── rocksdb/               # 源码
+├── build-debug-macos/     # macOS Debug 构建产物
+└── rocksdb_notes/         # 学习笔记
+```
 
 ## 准备 CMake
 
-当前电脑已经安装 Xcode Command Line Tools，可以使用 `/usr/bin/clang`、`/usr/bin/clang++` 和 `lldb`，但还没有检测到 CMake 或 Homebrew。
+需要安装 Xcode Command Line Tools 和 CMake。当前电脑已安装这些工具，可以使用 `/usr/bin/clang`、`/usr/bin/clang++`、`lldb` 和 `cmake`。如果在新电脑上配置，可以按下面的方法安装 CMake。
 
 可以从 [CMake 官方下载页](https://cmake.org/download/) 下载稳定版 macOS universal 的 `.dmg`，将 `CMake.app` 放到 `/Applications` 后，在当前终端执行：
 
@@ -59,11 +66,11 @@ cmake --version
 当前环境的 `SDKROOT` 指向 `MacOSX27.0.sdk`，之前的编译探测发现它会导致链接器报 `unknown architecture arm64e.x1`。本机的 `MacOSX26.5.sdk` 已通过 C++20 编译、链接和运行探测，因此显式选择它，同时通过 `CMAKE_OSX_SYSROOT` 固定 CMake 使用的 SDK。
 
 ```bash
-cd /Users/leo/doc/RocksDB/rocksdb
+cd /Users/leo/doc/RocksDB
 
 export SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk
 
-cmake -S . -B build-debug-macos -G "Unix Makefiles" \
+cmake -S rocksdb -B build-debug-macos -G "Unix Makefiles" \
   -DCMAKE_C_COMPILER=/usr/bin/clang \
   -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
   -DCMAKE_OSX_ARCHITECTURES=arm64 \
@@ -79,7 +86,9 @@ cmake -S . -B build-debug-macos -G "Unix Makefiles" \
   -DWITH_CORE_TOOLS=OFF
 ```
 
-`-O0 -g` 用于关闭优化、保留调试信息，方便单步和查看变量。`compile_commands.json` 用于编辑器的源码跳转。单独使用 `build-debug-macos/`，避免复用 Linux 或其他编译器生成的 CMake 缓存。
+`-O0 -g` 用于关闭优化、保留调试信息，方便单步和查看变量。`compile_commands.json` 用于编辑器的源码跳转。`-B build-debug-macos` 将产物放在当前目录下，与 `-S rocksdb` 指定的源码目录并列，并避免复用 Linux 或其他编译器生成的 CMake 缓存。
+
+CMake 缓存和生成文件包含绝对路径。已有构建目录移动后，需要用 `cmake --fresh` 加上上述配置参数重新生成缓存，再重新编译；只移动目录不能完成迁移。
 
 ## 编译和运行
 
@@ -116,12 +125,14 @@ run
 
 停在断点后，使用 `bt` 查看调用栈、`step` 进入函数、`next` 执行下一行、`frame variable` 查看局部变量、`continue` 继续运行。命令说明可参考 [LLDB 官方教程](https://lldb.llvm.org/use/tutorial.html)。
 
-构建产物位于 `build-debug-macos/`。以上步骤已对照当前仓库的 CMake 选项检查，并通过独立的小程序验证了 Clang、C++20、ARM64、26.5 SDK 和 RocksDB 公共头文件的组合；由于当前尚未安装 CMake，还没有实际执行 CMake 配置、完整构建或测试。
+构建产物位于 `/Users/leo/doc/RocksDB/build-debug-macos/`，与源码目录并列。以上配置使用 Clang、C++20、ARM64 和 26.5 SDK，已在该目录完成 `rocksdb`、`db_basic_test` 构建，并通过 `DBBasicTest.Flush` 和 `DBBasicTest.GetNewerVersionPresent` 两个用例。
 
 # 编译 db_bench
 
 ## mac 编译 db_bench
 ```zsh
+cd /Users/leo/doc/RocksDB/rocksdb
+
 export SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk
 export CPATH="$(brew --prefix)/include${CPATH:+:$CPATH}"
 export LIBRARY_PATH="$(brew --prefix)/lib${LIBRARY_PATH:+:$LIBRARY_PATH}"

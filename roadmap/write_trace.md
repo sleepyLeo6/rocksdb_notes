@@ -15,7 +15,7 @@ DBImpl::Put
 
 1. 用单个测试启动 GDB
 
-在 rocksdb 源码目录执行：
+在包含 rocksdb/ 和 build-debug/ 的上一级目录执行：
 
 ```bash
 gdb --args build-debug/db_basic_test --gtest_filter=DBBasicTest.GetNewerVersionPresent
@@ -35,7 +35,7 @@ run
 
 共享库还没加载时，GDB 可能提示断点暂时 pending，这是正常的。
 
-实际上这里最后会追踪到 `/home/leo/dev/RocksDB/rocksdb/build-debug/librocksdb.so.11`<br>
+按并列目录布局，这里会追踪到 `/home/leo/dev/RocksDB/build-debug/librocksdb.so.11`<br>
 还需要再加一个断点：`break /home/leo/dev/RocksDB/rocksdb/db/db_impl/db_impl_write.cc:907`<br>
 然后再 `continue`
 
